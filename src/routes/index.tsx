@@ -1,6 +1,14 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
 import {
   addMonomer,
   deleteMonomer,
@@ -115,154 +123,160 @@ function App() {
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
-      <section className="mb-8 rounded-3xl bg-slate-950 px-8 py-10 text-white shadow-xl">
+      <section className="mb-8 rounded-3xl bg-primary px-8 py-10 text-primary-foreground shadow-xl">
         <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-cyan-300">
           Macromasser
         </p>
         <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
           Enumerate macrocycle compositions by mass
         </h1>
-        <p className="max-w-3xl text-lg text-slate-300">
+        <p className="max-w-3xl text-lg text-primary-foreground/70">
           Select monomers, choose a macrocycle size, and view every composition with repetition.
           Monomers are stored in Cloudflare D1 and can be managed below.
         </p>
       </section>
 
       <section className="mb-8 grid gap-6 md:grid-cols-[2fr_1fr]">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-xl font-semibold">Monomers</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {monomers.map((monomer) => (
-              <label key={monomer.id} className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-4 hover:bg-slate-50">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(monomer.id)}
-                  onChange={(event) => {
-                    setSelectedIds((current) =>
-                      event.target.checked
-                        ? [...current, monomer.id]
-                        : current.filter((id) => id !== monomer.id),
-                    );
-                  }}
-                />
-                <span>
-                  <span className="block font-medium">{monomer.name}</span>
-                  <span className="text-sm text-slate-500">{monomer.mass.toFixed(5)} Da</span>
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <label className="mb-2 block text-xl font-semibold" htmlFor="size">
-            Macrocycle size
-          </label>
-          <input
-            id="size"
-            className="w-full rounded-xl border border-slate-300 px-4 py-3 text-lg"
-            min={1}
-            max={12}
-            type="number"
-            value={size}
-            onChange={(event) => setSize(Number(event.target.value))}
-          />
-          <p className="mt-3 text-sm text-slate-500">
-            Current result count: {macrocycles.length}
-          </p>
-        </div>
-      </section>
-
-      <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-xl font-semibold">Manage monomers</h2>
-        <div className="mb-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-          <input
-            className="rounded-xl border border-slate-300 px-4 py-3"
-            placeholder="Name, e.g. Gly"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-          <input
-            className="rounded-xl border border-slate-300 px-4 py-3"
-            inputMode="decimal"
-            placeholder="Mass, e.g. 57.02146"
-            value={mass}
-            onChange={(event) => setMass(event.target.value)}
-          />
-          <button
-            type="button"
-            className="rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white disabled:opacity-50"
-            disabled={isSaving}
-            onClick={submitMonomer}
-          >
-            {editingId ? "Save" : "Add"} monomer
-          </button>
-        </div>
-        {error ? <p className="mb-4 text-sm font-medium text-red-600">{error}</p> : null}
-        <div className="overflow-auto">
-          <table className="w-full border-collapse text-left">
-            <thead className="bg-slate-100 text-sm uppercase tracking-wide text-slate-600">
-              <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Mass</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+        <Card>
+          <CardHeader>
+            <CardTitle>Monomers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {monomers.map((monomer) => (
-                <tr key={monomer.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3 font-medium">{monomer.name}</td>
-                  <td className="px-4 py-3 tabular-nums">{monomer.mass.toFixed(5)} Da</td>
-                  <td className="space-x-2 px-4 py-3">
-                    <button
-                      type="button"
-                      className="rounded-lg border border-slate-300 px-3 py-1 text-sm"
-                      onClick={() => {
-                        setEditingId(monomer.id);
-                        setName(monomer.name);
-                        setMass(String(monomer.mass));
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-lg border border-red-200 px-3 py-1 text-sm text-red-700"
-                      onClick={() => removeMonomer(monomer)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+                <Label key={monomer.id} className="flex cursor-pointer items-center gap-3 rounded-xl border p-4 hover:bg-muted/50">
+                  <Checkbox
+                    checked={selectedIds.includes(monomer.id)}
+                    onChange={(event) => {
+                      setSelectedIds((current) =>
+                        event.target.checked
+                          ? [...current, monomer.id]
+                          : current.filter((id) => id !== monomer.id),
+                      );
+                    }}
+                  />
+                  <span>
+                    <span className="block font-medium">{monomer.name}</span>
+                    <span className="text-sm text-muted-foreground">{monomer.mass.toFixed(5)}</span>
+                  </span>
+                </Label>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Macrocycle size</CardTitle>
+            <CardDescription>Current result count: {macrocycles.length}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Input
+              id="size"
+              className="h-12 text-lg"
+              min={1}
+              max={12}
+              type="number"
+              value={size}
+              onChange={(event) => setSize(Number(event.target.value))}
+            />
+          </CardContent>
+        </Card>
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 p-6">
-          <h2 className="text-xl font-semibold">Possible macrocycles</h2>
-        </div>
-        <div className="max-h-[32rem] overflow-auto">
-          <table className="w-full border-collapse text-left">
-            <thead className="sticky top-0 bg-slate-100 text-sm uppercase tracking-wide text-slate-600">
-              <tr>
-                <th className="px-6 py-3">Composition</th>
-                <th className="px-6 py-3">Mass</th>
-              </tr>
-            </thead>
-            <tbody>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Manage monomers</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+            <Input
+              placeholder="Name, e.g. Gly"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+            <Input
+              inputMode="decimal"
+              placeholder="Mass, e.g. 57.02146"
+              value={mass}
+              onChange={(event) => setMass(event.target.value)}
+            />
+            <Button type="button" disabled={isSaving} onClick={submitMonomer}>
+              {editingId ? "Save" : "Add"} monomer
+            </Button>
+          </div>
+          {error ? (
+            <Alert className="mb-4" variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : null}
+          <div className="overflow-auto">
+            <Table>
+              <TableHeader className="bg-muted text-xs uppercase tracking-wide">
+                <TableRow>
+                  <TableHead className="px-4">Name</TableHead>
+                  <TableHead className="px-4">Mass</TableHead>
+                  <TableHead className="px-4">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {monomers.map((monomer) => (
+                  <TableRow key={monomer.id}>
+                    <TableCell className="px-4 font-medium">{monomer.name}</TableCell>
+                    <TableCell className="px-4 tabular-nums">{monomer.mass.toFixed(5)}</TableCell>
+                    <TableCell className="space-x-2 px-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingId(monomer.id);
+                          setName(monomer.name);
+                          setMass(String(monomer.mass));
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => removeMonomer(monomer)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b">
+          <CardTitle>Possible macrocycles</CardTitle>
+        </CardHeader>
+        <CardContent className="max-h-[32rem] overflow-auto p-0">
+          <Table>
+            <TableHeader className="sticky top-0 bg-muted text-xs uppercase tracking-wide">
+              <TableRow>
+                <TableHead className="px-6">Composition</TableHead>
+                <TableHead className="px-6">Mass</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {macrocycles.map((macrocycle) => (
-                <tr key={macrocycle.formula} className="border-t border-slate-100">
-                  <td className="px-6 py-3 font-medium">{macrocycle.formula}</td>
-                  <td className="px-6 py-3 tabular-nums">{macrocycle.mass.toFixed(5)} Da</td>
-                </tr>
+                <TableRow key={macrocycle.formula}>
+                  <TableCell className="px-6 font-medium">{macrocycle.formula}</TableCell>
+                  <TableCell className="px-6 tabular-nums">{macrocycle.mass.toFixed(5)}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </main>
   );
 }
