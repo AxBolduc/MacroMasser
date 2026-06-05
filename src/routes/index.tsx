@@ -1,11 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
-type Monomer = {
-  id: string;
-  name: string;
-  mass: number;
-};
+import {
+  addMonomer,
+  deleteMonomer,
+  getMonomers,
+  type Monomer,
+  updateMonomer,
+} from "../server/monomers";
 
 type Macrocycle = {
   formula: string;
@@ -13,16 +15,9 @@ type Macrocycle = {
   counts: Record<string, number>;
 };
 
-const monomers: Monomer[] = [
-  { id: "gly", name: "Gly", mass: 57.02146 },
-  { id: "ala", name: "Ala", mass: 71.03711 },
-  { id: "ser", name: "Ser", mass: 87.03203 },
-  { id: "val", name: "Val", mass: 99.06841 },
-  { id: "phe", name: "Phe", mass: 147.06841 },
-];
-
 export const Route = createFileRoute("/")({
   component: App,
+  loader: async () => await getMonomers(),
 });
 
 function generateMacrocycles(selected: Monomer[], size: number): Macrocycle[] {
@@ -64,18 +59,59 @@ function generateMacrocycles(selected: Monomer[], size: number): Macrocycle[] {
 }
 
 function App() {
-  const [selectedIds, setSelectedIds] = useState(() => monomers.map((monomer) => monomer.id));
+  const router = useRouter();
+  const monomers = Route.useLoaderData() as Monomer[];
+  const [selectedIds, setSelectedIds] = useState<string[]>(() =>
+    monomers.map((monomer) => monomer.id),
+  );
   const [size, setSize] = useState(3);
+  const [name, setName] = useState("");
+  const [mass, setMass] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const selectedMonomers = useMemo(
     () => monomers.filter((monomer) => selectedIds.includes(monomer.id)),
-    [selectedIds],
+    [monomers, selectedIds],
   );
 
   const macrocycles = useMemo(
     () => generateMacrocycles(selectedMonomers, size),
     [selectedMonomers, size],
   );
+
+  async function refresh(nextMonomers: Monomer[]) {
+    setSelectedIds((current) => current.filter((id) => nextMonomers.some((m) => m.id === id)));
+    await router.invalidate();
+  }
+
+  async function submitMonomer() {
+    setIsSaving(true);
+    setError(null);
+    try {
+      const data = { name, mass: Number(mass) };
+      const nextMonomers = editingId
+        ? await updateMonomer({ data: { ...data, id: editingId } })
+        : await addMonomer({ data });
+      setName("");
+      setMass("");
+      setEditingId(null);
+      await refresh(nextMonomers);
+    } catch (event) {
+      setError(event instanceof Error ? event.message : "Unable to save monomer.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function removeMonomer(monomer: Monomer) {
+    if (!confirm(`Delete monomer “${monomer.name}”? Generated results will update.`)) return;
+
+    setError(null);
+    const nextMonomers = await deleteMonomer({ data: { id: monomer.id } });
+    await refresh(nextMonomers);
+  }
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
@@ -88,7 +124,7 @@ function App() {
         </h1>
         <p className="max-w-3xl text-lg text-slate-300">
           Select monomers, choose a macrocycle size, and view every composition with repetition.
-          The starter app treats macrocycles as unordered compositions, not order-specific sequences.
+          Monomers are stored in Cloudflare D1 and can be managed below.
         </p>
       </section>
 
@@ -134,6 +170,73 @@ function App() {
           <p className="mt-3 text-sm text-slate-500">
             Current result count: {macrocycles.length}
           </p>
+        </div>
+      </section>
+
+      <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-xl font-semibold">Manage monomers</h2>
+        <div className="mb-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+          <input
+            className="rounded-xl border border-slate-300 px-4 py-3"
+            placeholder="Name, e.g. Gly"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+          <input
+            className="rounded-xl border border-slate-300 px-4 py-3"
+            inputMode="decimal"
+            placeholder="Mass, e.g. 57.02146"
+            value={mass}
+            onChange={(event) => setMass(event.target.value)}
+          />
+          <button
+            type="button"
+            className="rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white disabled:opacity-50"
+            disabled={isSaving}
+            onClick={submitMonomer}
+          >
+            {editingId ? "Save" : "Add"} monomer
+          </button>
+        </div>
+        {error ? <p className="mb-4 text-sm font-medium text-red-600">{error}</p> : null}
+        <div className="overflow-auto">
+          <table className="w-full border-collapse text-left">
+            <thead className="bg-slate-100 text-sm uppercase tracking-wide text-slate-600">
+              <tr>
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Mass</th>
+                <th className="px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {monomers.map((monomer) => (
+                <tr key={monomer.id} className="border-t border-slate-100">
+                  <td className="px-4 py-3 font-medium">{monomer.name}</td>
+                  <td className="px-4 py-3 tabular-nums">{monomer.mass.toFixed(5)} Da</td>
+                  <td className="space-x-2 px-4 py-3">
+                    <button
+                      type="button"
+                      className="rounded-lg border border-slate-300 px-3 py-1 text-sm"
+                      onClick={() => {
+                        setEditingId(monomer.id);
+                        setName(monomer.name);
+                        setMass(String(monomer.mass));
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-red-200 px-3 py-1 text-sm text-red-700"
+                      onClick={() => removeMonomer(monomer)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
