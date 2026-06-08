@@ -125,18 +125,21 @@ function App() {
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
-      <section className="mb-8 rounded-3xl bg-primary px-8 py-10 text-primary-foreground shadow-xl">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-cyan-300">
-          Macromasser
+      <header className="mb-10">
+        <a href="/" className="group inline-flex items-baseline gap-0.5 font-bold tracking-tight">
+          <span className="text-3xl text-slate-900 md:text-4xl">macro</span>
+          <span className="bg-gradient-to-r from-cyan-500 to-sky-700 bg-clip-text text-3xl text-transparent md:text-4xl">
+            masser
+          </span>
+          <span className="ml-1 align-baseline font-mono text-xs font-medium text-cyan-600/80">
+            m/z
+          </span>
+        </a>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">
+          Pick a set of monomers and a macrocycle size — every composition with repetition is
+          enumerated and ranked by mass. Manage the monomer library below.
         </p>
-        <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
-          Enumerate macrocycle compositions by mass
-        </h1>
-        <p className="max-w-3xl text-lg text-primary-foreground/70">
-          Select monomers, choose a macrocycle size, and view every composition with repetition.
-          Monomers are stored in Cloudflare D1 and can be managed below.
-        </p>
-      </section>
+      </header>
 
       <section className="mb-8 grid gap-6 md:grid-cols-[2fr_1fr]">
         <Card>
