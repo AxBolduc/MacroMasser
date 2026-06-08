@@ -17,6 +17,8 @@ import {
   updateMonomer,
 } from "../server/monomers";
 
+const SODIUM_ADDUCT_MASS = 23;
+
 type Macrocycle = {
   formula: string;
   mass: number;
@@ -264,6 +266,7 @@ function App() {
               <TableRow>
                 <TableHead className="px-6">Composition</TableHead>
                 <TableHead className="px-6">Mass</TableHead>
+                <TableHead className="px-6">Mass + Na</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -271,6 +274,9 @@ function App() {
                 <TableRow key={macrocycle.formula}>
                   <TableCell className="px-6 font-medium">{macrocycle.formula}</TableCell>
                   <TableCell className="px-6 tabular-nums">{macrocycle.mass.toFixed(5)}</TableCell>
+                  <TableCell className="px-6 tabular-nums">
+                    {(macrocycle.mass + SODIUM_ADDUCT_MASS).toFixed(5)}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
